@@ -1,5 +1,4 @@
 import ast.*;
-import java_cup.Lexer;
 
 import java.io.*;
 
@@ -11,7 +10,7 @@ public class Main {
             var filename = args[args.length - 2];
             var outfilename = args[args.length - 1];
 
-            Program prog;
+            Program prog = null;
 
             if (inputMethod.equals("parse")) {
 
@@ -20,10 +19,10 @@ public class Main {
                     FileReader fileReader = new FileReader(new File(inputFilename));
 
                     Parser p = new Parser(new Lexer(fileReader));
-                    Expr expr = (Expr) p.parse().value;
+                    Program program = (Program) p.parse().value;
 
                     AstPrintVisitor astPrinter = new AstPrintVisitor();
-                    expr.accept(astPrinter);
+                    program.accept(astPrinter);
                     System.out.println(astPrinter.getString());
 
                 }catch (Exception e){

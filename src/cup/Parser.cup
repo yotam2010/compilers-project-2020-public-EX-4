@@ -82,7 +82,7 @@ terminal TRUE, FALSE;
 terminal THIS, NEW;
 terminal NOT;
 terminal LENGTH;
-terminal AND, LESSTHAN,;
+terminal AND, LESSTHAN;
 
 /*****************/
 /* NON TERMINALS */
@@ -92,13 +92,17 @@ non terminal Statement statement;
 non terminal AstType astType;
 non terminal MethodDecl methodDecl;
 non terminal VarDecl varDecl;
-non terminal ClassDecl ClassDecl;
+non terminal ClassDecl classDecl;
 non terminal MainClass mainClass;
 non terminal Program program;
 non terminal FormalArg formalArg;
 
 non terminal LinkedList<Expr> commaexprlist;
-non terminal LinkedList<Expr> formalArglist;
+non terminal LinkedList<FormalArg> formalArglist;
+non terminal LinkedList<MethodDecl> methodlist;
+non terminal LinkedList<Statement> statementlist;
+non terminal LinkedList<VarDecl> varlist;
+non terminal LinkedList<ClassDecl> classlist;
 
 /***********************/
 /* OPERATOR PRECEDENCE */
@@ -107,7 +111,10 @@ non terminal LinkedList<Expr> formalArglist;
 precedence left LESSTHAN, AND;
 precedence left PLUS, MINUS;
 precedence left MULT;
+precedence left ID;
 precedence left NUMBER, FALSE, TRUE;
+precedence left NOT;
+precedence left LPAREN, RPAREN;
 
 /************************/
 /* INITIAL NON TERMINAL */
@@ -121,20 +128,18 @@ start with program;
 program ::= mainClass:m LPAREN classlist:clist RPAREN {: RESULT = new Program(m,clist); :}
 ;
 
-mainClass ::= CLASS ID:d1 LPARENCURL PUBLIC STATIC VOID MAIN
- LPAREN STRING LPARENSQUARE RPARENSQUARE ID:d2
- RPAREN LPARENCURL statment:s RPARENCURL RPARENCURL {: RESULT = new MainClass(d1,d2,s); :}
+mainClass ::= CLASS ID:d1 LPARENCURL PUBLIC STATIC VOID MAIN LPAREN STRING LPARENSQUARE RPARENSQUARE ID:d2 RPAREN LPARENCURL statement:s RPARENCURL RPARENCURL {: RESULT = new MainClass(d1,d2,s); :}
 ;
 
-classDecl ::= CLASS ID:d1 EXTENDS ID:d2 LPARENSQUARE varlist:vlist methodlist:mlist RPARENSQUARE {: RESULT = new ClassDecl(d1,d2,vlist,mlist); :}
-                | CLASS ID:d1 LPARENSQUARE varlist:vlist methodlist:mlist RPARENSQUARE {: RESULT = new ClassDecl(d1,null,vlist,mlist); :}
+classDecl ::= CLASS ID:d1 EXTENDS ID:d2 LPARENCURL varlist:vlist methodlist:mlist RPARENCURL {: RESULT = new ClassDecl(d1,d2,vlist,mlist); :}
+                | CLASS ID:d1 LPARENCURL varlist:vlist methodlist:mlist RPARENCURL {: RESULT = new ClassDecl(d1,null,vlist,mlist); :}
 ;
 
-varDecl ::= astType:t1 ID:d1 SEMICOLON {: RESULT = new VarDecl(t1,d1,null) :}
+varDecl ::= astType:t1 ID:d1 SEMICOLON {: RESULT = new VarDecl(t1,d1,null); :}
 ;
 
-methodDecl ::= PUBLIC astType:t1 ID:d1 LPAREN formalArg:a1 formalArglist:alist RPAREN
- LPARENCURL varlist:vlist statementlist:slist RETURN expr:e1 SEMICOLON RPARENCURL{: formalArglist.addFirst(a1); RESULT = new MethodDecl(t1,d1,alist,vlist,slist,e1,null); :}
+methodDecl ::= PUBLIC astType:t1 ID:d1 LPAREN formalArg:a1 formalArglist:alist RPAREN LPARENCURL varlist:vlist statementlist:slist RETURN expr:e1 SEMICOLON RPARENCURL{: alist.addFirst(a1); RESULT = new MethodDecl(t1,d1,alist,vlist,slist,e1,null); :}
+            | PUBLIC astType:t1 ID:d1 LPAREN formalArglist:alist RPAREN LPARENCURL varlist:vlist statementlist:slist RETURN expr:e1 SEMICOLON RPARENCURL{: RESULT = new MethodDecl(t1,d1,alist,vlist,slist,e1,null); :}
 ;
 
 astType ::= INT LPARENSQUARE RPARENSQUARE {: RESULT = new IntArrayAstType(); :}
@@ -167,14 +172,17 @@ expr ::= expr:e1 PLUS expr:e2 		{: RESULT = new AddExpr(e1, e2); :}
          | FALSE {: RESULT = new FalseExpr(); :}
          | ID:d1 {: RESULT = new IdentifierExpr(d1); :}
          | THIS {: RESULT = new ThisExpr(); :}
-         | NEW INT LPARENSQUARE expr:e1 RPARENSQUARE {: RESULT = new IntArrayExpr(e1); :}
+         | NEW INT LPARENSQUARE expr:e1 RPARENSQUARE {: RESULT = new NewIntArrayExpr(e1); :}
          | NEW ID:d1 LPAREN RPAREN{: RESULT = new NewObjectExpr(d1); :}
          | NOT expr:e1 {: RESULT = new NotExpr(e1); :}
-         | LPAREN expr:e1 RPAREN {: RESULT = e1; :}
 ;
 
 commaexprlist ::= COMMA expr: e commaexprlist:el {: el.addFirst(e); RESULT = el; :}
 		 | /* empty */           	{: RESULT = new LinkedList<Expr>(); :}
+;
+
+formalArglist ::= COMMA formalArg:a formalArglist:el {: el.addFirst(a); RESULT = el; :}
+		 | /* empty */           	{: RESULT = new LinkedList<FormalArg>(); :}
 ;
 
 classlist ::= classDecl: c1 classlist :clist {: clist.addFirst(c1); RESULT = clist; :}
@@ -191,8 +199,4 @@ statementlist ::= statement:s1 statementlist:clist {: clist.addFirst(s1); RESULT
 
 methodlist ::= methodDecl: c1 methodlist :clist {: clist.addFirst(c1); RESULT = clist; :}
 		 | /* empty */           	{: RESULT = new LinkedList<MethodDecl>(); :}
-;
-
-formalArglist ::= COMMA formalArg:a formalArglist:el {: el.addFirst(a); RESULT = el; :}
-		 | /* empty */           	{: RESULT = new LinkedList<FormalArg>(); :}
 ;
