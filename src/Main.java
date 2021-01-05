@@ -1,4 +1,5 @@
 import ast.*;
+import java_cup.Lexer;
 
 import java.io.*;
 
@@ -13,7 +14,22 @@ public class Main {
             Program prog;
 
             if (inputMethod.equals("parse")) {
-                throw new UnsupportedOperationException("TODO - Ex. 4");
+
+                try{
+                    var inputFilename = filename;
+                    FileReader fileReader = new FileReader(new File(inputFilename));
+
+                    Parser p = new Parser(new Lexer(fileReader));
+                    Expr expr = (Expr) p.parse().value;
+
+                    AstPrintVisitor astPrinter = new AstPrintVisitor();
+                    expr.accept(astPrinter);
+                    System.out.println(astPrinter.getString());
+
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+
             } else if (inputMethod.equals("unmarshal")) {
                 AstXMLSerializer xmlSerializer = new AstXMLSerializer();
                 prog = xmlSerializer.deserialize(new File(filename));

@@ -72,7 +72,8 @@ INTEGER = 0 | [1-9][0-9]*
 
 ID = [a-zA-Z][a-zA-Z_0-9]*
 
-
+%state COMMENTS
+%state MULTICOMMENTS
 /******************************/
 /* DOLAR DOLAR - DON'T TOUCH! */
 /******************************/
@@ -88,6 +89,9 @@ ID = [a-zA-Z][a-zA-Z_0-9]*
 /* So these regular expressions will only be matched if the   */
 /* scanner is in the start state YYINITIAL.                   */
 /**************************************************************/
+
+<YYINITIAL> "//"        { yybegin(COMMENTS); }
+<YYINITIAL> "/*"        { yybegin(MULTICOMMENTS); }
 
 <YYINITIAL> {
 "public"                { return symbol(sym.PUBLIC); }
@@ -126,13 +130,14 @@ ID = [a-zA-Z][a-zA-Z_0-9]*
 "length"                { return symbol(sym.LENGTH); }
 "&&"                    { return symbol(sym.AND); }
 "<"                     { return symbol(sym.LESSTHAN); }
-{ID}                    { return symbol(sym.ID,new String(yytext())); }
 {WhiteSpace}            { }
 <<EOF>>				    { return symbol(sym.EOF); }
 }
 
-<YYINITIAL> "//"        { yybegin(COMMENTS); }
-<YYINITIAL> "/*"        { yybegin(MULTICOMMENTS); }
+<YYINITIAL> {
+{ID}                    { return symbol(sym.ID,new String(yytext())); }
+}
+
 <COMMENTS> [^\n]        { }
 <COMMENTS> [\n]         { yybegin(YYINITIAL); }
 <MULTICOMMENTS> [^"*/"] { }
