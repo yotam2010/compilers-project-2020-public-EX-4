@@ -63,24 +63,134 @@ scan with
 /*************/
 /* TERMINALS */
 /*************/
-terminal PUBLIC;
+terminal PLUS, MINUS, MULT;
+terminal LPAREN, RPAREN;
+terminal LPARENSQUARE, RPARENSQUARE;
+terminal LPARENCURL, RPARENCURL;
+terminal PUBLIC, STATIC, VOID, RETURN;
+terminal CLASS, MAIN;
+terminal int NUMBER;
+terminal STRING, INT, BOOLEAN;
+terminal WHILE, ELSE, IF;
+terminal SYSOUT;
+terminal SEMICOLON;
+terminal EQUAL;
+terminal EXTENDS;
+terminal String ID;
+terminal UMINUS;
+terminal COMMA, DOT;
+terminal TRUE, FALSE;
+terminal THIS, NEW;
+terminal NOT;
+terminal LENGTH;
+terminal AND, LESSTHAN,;
 
 /*****************/
 /* NON TERMINALS */
 /*****************/
-non terminal prog;
+non terminal Expr expr;
+non terminal Statement statement;
+non terminal AstType astType;
+non terminal MethodDecl methodDecl;
+non terminal VarDecl varDecl;
+non terminal ClassDecl ClassDecl;
+non terminal MainClass mainClass;
+non terminal Program program;
+non terminal FormalArg formalArg;
+
+non terminal LinkedList<Expr> commaexprlist;
 
 /***********************/
 /* OPERATOR PRECEDENCE */
 /***********************/
+precedence left PLUS, MINUS;
+precedence left MULT, DIV;
+precedence left UMINUS;
 
 /************************/
 /* INITIAL NON TERMINAL */
 /************************/
-start with prog;
+start with program;
 
 /********************/
 /* PRODUCTION RULES */
 /********************/
 
-prog            ::=     ;
+program ::= mainClass:m LPAREN classlist:clist RPAREN {: RESULT = new Program(m,clist); :}
+;
+
+mainClass ::= CLASS ID:d1 LPARENCURL PUBLIC STATIC VOID MAIN
+ LPAREN STRING LPARENSQUARE RPARENSQUARE ID:d2
+ RPAREN LPARENCURL statment:s RPARENCURL RPARENCURL {: RESULT = new MainClass(d1,d2,s); :}
+;
+
+classDecl ::= CLASS ID:d1 EXTENDS ID:d2 LPARENSQUARE varlist:vlist methodlist:mlist RPARENSQUARE {: RESULT = new ClassDecl(d1,d2,vlist,mlist); :}
+                | CLASS ID:d1 LPARENSQUARE varlist:vlist methodlist:mlist RPARENSQUARE {: RESULT = new ClassDecl(d1,null,vlist,mlist); :}
+;
+
+varDecl ::= astType:t1 ID:d1 SEMICOLON {: RESULT = new VarDecl(t1,d1,null) :}
+;
+
+methodDecl ::= PUBLIC astType:t1 ID:d1 LPAREN formalArglist:alist RPAREN
+ LPARENCURL varlist:vlist statementlist:slist RETURN expr:e1 SEMICOLON RPARENCURL{: RESULT = new MethodDecl(t1,d1,alist,vlist,slist,e1,null); :}
+;
+
+astType ::= INT LPARENSQUARE RPARENSQUARE {: RESULT = new IntArrayAstType(); :}
+            | BOOLEAN {: RESULT = new BoolAstType(); :}
+            | INT {: RESULT = new IntAstType(); :}
+            | ID:d1 {: RESULT = new RefType(d1); :}
+;
+
+statement ::= LPARENCURL statementlist:slist RPARENCURL {: RESULT = new BlockStatement(slist); :}
+            | IF LPAREN expr:e1 RPAREN statement:s1 ELSE statement:s2 {: RESULT = new IfStatement(e1,s1,s2); :}
+            | WHILE LPAREN expr:e1 RPAREN statement:s1 {: RESULT = new WhileStatement(e1,s1); :}
+            | SYSOUT LPAREN expr:e1 RPAREN SEMICOLON{: RESULT = new SysoutStatement(e1); :}
+            | ID:d1 EQUAL expr:e1 SEMICOLON{: RESULT = new AssignStatement(d1,e1); :}
+            | ID:d1 LPARENSQUARE expr:e1 RPARENSQUARE EQUAL expr:e2 SEMICOLON{: RESULT = new AssignArrayStatement(d1,e1,e2); :}
+;
+
+
+expr ::= expr:e1 PLUS expr:e2 		{: RESULT = new AddExpr(e1, e2); :}
+         | expr:e1 MINUS expr:e2	{: RESULT = new SubtractExpr(e1, e2); :}
+         | expr:e1 MULT expr:e2		{: RESULT = new MultExpr(e1, e2); :}
+         | expr:e1 AND expr:e2      {: RESULT = new AndExpr(e1, e2); :}
+         | expr:e1 LESSTHAN expr:e2 {: RESULT = new LtExpr(e1, e2); :}
+         | MINUS expr:e 			{: RESULT = new MinusExpr(e); :} %prec UMINUS
+         | LPAREN expr:e RPAREN		{: RESULT = e; :}
+         | NUMBER:n					{: RESULT = new IntegerLiteralExpr(n); :}
+         | expr:e1 LPARENSQUARE expr:e2 RPARENSQUARE {: RESULT = new ArrayAccessExpr(e1, e2); :}
+         | expr:e1 DOT LENGTH {: RESULT = new ArrayLengthExpr(e1); :}
+         | expr:e1 DOT ID:d1 LPAREN commaexprlist:clist RPAREN {: RESULT = new MethodCallExpr(e1,d1,clist); :}
+         | TRUE {: RESULT = new TrueExpr(); :}
+         | FALSE {: RESULT = new FalseExpr(); :}
+         | ID:d1 {: RESULT = new IdentifierExpr(d1); :}
+         | THIS {: RESULT = new ThisExpr(); :}
+         | NEW INT LPARENSQUARE expr:e1 RPARENSQUARE {: RESULT = new IntArrayExpr(e1); :}
+         | NEW ID:d1 LPAREN RPAREN{: RESULT = new NewObjectExpr(d1); :}
+         | NOT expr:e1 {: RESULT = new NotExpr(e1); :}
+         | LPAREN expr:e1 RPAREN {: RESULT = e1; :}
+;
+
+commaexprlist ::= COMMA expr: e commaexprlist:el {: el.addFirst(e); RESULT = el; :}
+		 | /* empty */           	{: RESULT = new LinkedList<Expr>(); :}
+;
+
+classlist ::= classDecl: c1 classlist :clist {: clist.addFirst(c1); RESULT = clist; :}
+		 | /* empty */           	{: RESULT = new LinkedList<ClassDecl>(); :}
+;
+
+varlist ::= varDecl: c1 varlist :clist {: clist.addFirst(c1); RESULT = clist; :}
+		 | /* empty */           	{: RESULT = new LinkedList<VarDecl>(); :}
+;
+
+statementlist ::= statement:s1 statementlist:clist {: clist.addFirst(s1); RESULT = clist; :}
+		 | /* empty */           	{: RESULT = new LinkedList<Statement>(); :}
+;
+
+methodlist ::= methodDecl: c1 methodlist :clist {: clist.addFirst(c1); RESULT = clist; :}
+		 | /* empty */           	{: RESULT = new LinkedList<MethodDecl>(); :}
+;
+
+formalArglist ::= COMMA formalArg:a formalArglist:el {: el.addFirst(a); RESULT = el; :}
+		 | /* empty */           	{: RESULT = new LinkedList<FormalArg>(); :}
+;
