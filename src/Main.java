@@ -23,10 +23,12 @@ public class Main {
 
                     AstPrintVisitor astPrinter = new AstPrintVisitor();
                     program.accept(astPrinter);
-                    System.out.println(astPrinter.getString());
+                    AstXMLSerializer xmlSerializer = new AstXMLSerializer();
+                    xmlSerializer.serialize(program, outfilename);
+
+                    return;
 
                 }catch (Exception e){
-                    e.printStackTrace();
                 }
 
             } else if (inputMethod.equals("unmarshal")) {

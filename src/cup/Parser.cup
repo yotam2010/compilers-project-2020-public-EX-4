@@ -25,8 +25,17 @@ parser code
 	// Override default error reporting in parser
 	public void report_error(String message, Object info)
 	{
-	    System.err.print("Syntax error at line " + lexer.getLine() + " of input. Parser\n");
-		System.exit(1);
+
+        switch (this.lexer.yystate()) {
+            case Lexer.MULTICOMMENTS:
+            case Lexer.MULTICOMMENTSSECOUND:
+                System.err.print("Syntax error at line " + (lexer.multiCommentStartLine+1) + " of input. Lexer\n");
+                break;
+            default:
+                System.err.print("Syntax error at line " + lexer.getLine() + " of input. Parser\n");
+
+        }
+        System.exit(1);
 	}
 :}
 
@@ -69,12 +78,12 @@ terminal LPARENSQUARE, RPARENSQUARE;
 terminal LPARENCURL, RPARENCURL;
 terminal PUBLIC, STATIC, VOID, RETURN;
 terminal CLASS, MAIN;
-terminal int NUMBER;
+terminal Integer NUMBER;
 terminal STRING, INT, BOOLEAN;
 terminal WHILE, ELSE, IF;
 terminal SYSOUT;
 terminal SEMICOLON;
-terminal EQUAL;
+terminal ASSIGN;
 terminal EXTENDS;
 terminal String ID;
 terminal COMMA, DOT;
@@ -108,13 +117,13 @@ non terminal LinkedList<ClassDecl> classlist;
 /* OPERATOR PRECEDENCE */
 /***********************/
 
-precedence left LESSTHAN, AND;
+precedence nonassoc ASSIGN;
+precedence nonassoc AND;
+precedence left LESSTHAN;
 precedence left PLUS, MINUS;
 precedence left MULT;
-precedence left ID;
-precedence left NUMBER, FALSE, TRUE;
-precedence left NOT;
-precedence left LPAREN, RPAREN;
+precedence left NOT, NEW;
+precedence left DOT;
 
 /************************/
 /* INITIAL NON TERMINAL */
@@ -125,7 +134,7 @@ start with program;
 /* PRODUCTION RULES */
 /********************/
 
-program ::= mainClass:m LPAREN classlist:clist RPAREN {: RESULT = new Program(m,clist); :}
+program ::= mainClass:m classlist:clist {: RESULT = new Program(m,clist); :}
 ;
 
 mainClass ::= CLASS ID:d1 LPARENCURL PUBLIC STATIC VOID MAIN LPAREN STRING LPARENSQUARE RPARENSQUARE ID:d2 RPAREN LPARENCURL statement:s RPARENCURL RPARENCURL {: RESULT = new MainClass(d1,d2,s); :}
@@ -135,11 +144,11 @@ classDecl ::= CLASS ID:d1 EXTENDS ID:d2 LPARENCURL varlist:vlist methodlist:mlis
                 | CLASS ID:d1 LPARENCURL varlist:vlist methodlist:mlist RPARENCURL {: RESULT = new ClassDecl(d1,null,vlist,mlist); :}
 ;
 
-varDecl ::= astType:t1 ID:d1 SEMICOLON {: RESULT = new VarDecl(t1,d1,null); :}
+varDecl ::= astType:t1 ID:d1 SEMICOLON {: RESULT = new VarDecl(t1,d1,t1left); :}
 ;
 
-methodDecl ::= PUBLIC astType:t1 ID:d1 LPAREN formalArg:a1 formalArglist:alist RPAREN LPARENCURL varlist:vlist statementlist:slist RETURN expr:e1 SEMICOLON RPARENCURL{: alist.addFirst(a1); RESULT = new MethodDecl(t1,d1,alist,vlist,slist,e1,null); :}
-            | PUBLIC astType:t1 ID:d1 LPAREN formalArglist:alist RPAREN LPARENCURL varlist:vlist statementlist:slist RETURN expr:e1 SEMICOLON RPARENCURL{: RESULT = new MethodDecl(t1,d1,alist,vlist,slist,e1,null); :}
+methodDecl ::= PUBLIC astType:t1 ID:d1 LPAREN formalArg:a1 formalArglist:alist RPAREN LPARENCURL varlist:vlist statementlist:slist RETURN expr:e1 SEMICOLON RPARENCURL{: alist.addFirst(a1); RESULT = new MethodDecl(t1,d1,alist,vlist,slist,e1,t1left); :}
+            | PUBLIC astType:t1 ID:d1 LPAREN formalArglist:alist RPAREN LPARENCURL varlist:vlist statementlist:slist RETURN expr:e1 SEMICOLON RPARENCURL{: RESULT = new MethodDecl(t1,d1,alist,vlist,slist,e1,t1left); :}
 ;
 
 astType ::= INT LPARENSQUARE RPARENSQUARE {: RESULT = new IntArrayAstType(); :}
@@ -148,14 +157,16 @@ astType ::= INT LPARENSQUARE RPARENSQUARE {: RESULT = new IntArrayAstType(); :}
             | ID:d1 {: RESULT = new RefType(d1); :}
 ;
 
-statement ::= LPARENCURL statementlist:slist RPARENCURL {: RESULT = new BlockStatement(slist); :}
+statement ::= ID:d1 ASSIGN expr:e1 SEMICOLON {: RESULT = new AssignStatement(d1,e1); :}
+            | LPARENCURL statementlist:slist RPARENCURL {: RESULT = new BlockStatement(slist); :}
             | IF LPAREN expr:e1 RPAREN statement:s1 ELSE statement:s2 {: RESULT = new IfStatement(e1,s1,s2); :}
             | WHILE LPAREN expr:e1 RPAREN statement:s1 {: RESULT = new WhileStatement(e1,s1); :}
-            | SYSOUT LPAREN expr:e1 RPAREN SEMICOLON{: RESULT = new SysoutStatement(e1); :}
-            | ID:d1 EQUAL expr:e1 SEMICOLON{: RESULT = new AssignStatement(d1,e1); :}
-            | ID:d1 LPARENSQUARE expr:e1 RPARENSQUARE EQUAL expr:e2 SEMICOLON{: RESULT = new AssignArrayStatement(d1,e1,e2); :}
+            | SYSOUT LPAREN expr:e1 RPAREN SEMICOLON {: RESULT = new SysoutStatement(e1); :}
+            | ID:d1 LPARENSQUARE expr:e1 RPARENSQUARE ASSIGN expr:e2 SEMICOLON {: RESULT = new AssignArrayStatement(d1,e1,e2); :}
 ;
 
+formalArg  ::= astType:t1 ID:d1 {: RESULT = new FormalArg(t1,d1,t1left); :}
+;
 
 expr ::= expr:e1 PLUS expr:e2 		{: RESULT = new AddExpr(e1, e2); :}
          | expr:e1 MINUS expr:e2	{: RESULT = new SubtractExpr(e1, e2); :}
@@ -163,7 +174,7 @@ expr ::= expr:e1 PLUS expr:e2 		{: RESULT = new AddExpr(e1, e2); :}
          | expr:e1 AND expr:e2      {: RESULT = new AndExpr(e1, e2); :}
          | expr:e1 LESSTHAN expr:e2 {: RESULT = new LtExpr(e1, e2); :}
          | LPAREN expr:e RPAREN		{: RESULT = e; :}
-         | NUMBER:n					{: RESULT = new IntegerLiteralExpr(n); :}
+         | NUMBER:n					{: RESULT = new IntegerLiteralExpr(n.intValue()); :}
          | expr:e1 LPARENSQUARE expr:e2 RPARENSQUARE {: RESULT = new ArrayAccessExpr(e1, e2); :}
          | expr:e1 DOT LENGTH {: RESULT = new ArrayLengthExpr(e1); :}
          | expr:e1 DOT ID:d1 LPAREN expr:e2 commaexprlist:clist RPAREN {: clist.addFirst(e2); RESULT = new MethodCallExpr(e1,d1,clist); :}
@@ -185,18 +196,18 @@ formalArglist ::= COMMA formalArg:a formalArglist:el {: el.addFirst(a); RESULT =
 		 | /* empty */           	{: RESULT = new LinkedList<FormalArg>(); :}
 ;
 
-classlist ::= classDecl: c1 classlist :clist {: clist.addFirst(c1); RESULT = clist; :}
+classlist ::=  classlist :clist classDecl: c1 {: clist.add(c1); RESULT = clist; :}
 		 | /* empty */           	{: RESULT = new LinkedList<ClassDecl>(); :}
 ;
 
-varlist ::= varDecl: c1 varlist :clist {: clist.addFirst(c1); RESULT = clist; :}
+varlist ::= varlist :clist varDecl: c1 {:  clist.add(c1); RESULT = clist; :}
 		 | /* empty */           	{: RESULT = new LinkedList<VarDecl>(); :}
 ;
 
-statementlist ::= statement:s1 statementlist:clist {: clist.addFirst(s1); RESULT = clist; :}
+statementlist ::= statement:s1 statementlist:clist {: RESULT = clist; clist.addFirst(s1);  :}
 		 | /* empty */           	{: RESULT = new LinkedList<Statement>(); :}
 ;
 
-methodlist ::= methodDecl: c1 methodlist :clist {: clist.addFirst(c1); RESULT = clist; :}
+methodlist ::= methodDecl: c1 methodlist :clist {: RESULT = clist; clist.addFirst(c1); :}
 		 | /* empty */           	{: RESULT = new LinkedList<MethodDecl>(); :}
 ;

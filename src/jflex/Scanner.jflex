@@ -58,6 +58,7 @@ import java_cup.runtime.*;
 	/*******************************************/
 	public int getLine()    { return yyline + 1; }
 	public int getCharPos() { return yycolumn;   }
+	public int multiCommentStartLine=-1;
 %}
 
 /***********************/
@@ -68,12 +69,13 @@ LineTerminator = \r|\n|\r\n
 
 WhiteSpace = [\t ]|{LineTerminator}
 
-INTEGER = 0 | [1-9][0-9]*
+INTEGER = 0|[1-9][0-9]*
 
 ID = [a-zA-Z][a-zA-Z_0-9]*
 
 %state COMMENTS
 %state MULTICOMMENTS
+%state MULTICOMMENTSSECOUND
 /******************************/
 /* DOLAR DOLAR - DON'T TOUCH! */
 /******************************/
@@ -91,7 +93,8 @@ ID = [a-zA-Z][a-zA-Z_0-9]*
 /**************************************************************/
 
 <YYINITIAL> "//"        { yybegin(COMMENTS); }
-<YYINITIAL> "/*"        { yybegin(MULTICOMMENTS); }
+<YYINITIAL> "/*"        { multiCommentStartLine= yyline;yybegin(MULTICOMMENTS); }
+<YYINITIAL> {WhiteSpace}            { }
 
 <YYINITIAL> {
 "public"                { return symbol(sym.PUBLIC); }
@@ -109,7 +112,7 @@ ID = [a-zA-Z][a-zA-Z_0-9]*
 "return"                { return symbol(sym.RETURN); }
 "class"                 { return symbol(sym.CLASS); }
 "main"                  { return symbol(sym.MAIN); }
-{INTEGER}               { return symbol(sym.NUMBER, Integer.parseInt(yytext())); }
+{INTEGER}               { return symbol(sym.NUMBER,Integer.parseInt(yytext())); }
 "String"                { return symbol(sym.STRING); }
 "int"                   { return symbol(sym.INT); }
 "boolean"               { return symbol(sym.BOOLEAN); }
@@ -118,7 +121,7 @@ ID = [a-zA-Z][a-zA-Z_0-9]*
 "if"                    { return symbol(sym.IF); }
 "System.out.println"    { return symbol(sym.SYSOUT); }
 ";"                     { return symbol(sym.SEMICOLON); }
-"="                     { return symbol(sym.EQUAL); }
+"="                     { return symbol(sym.ASSIGN); }
 "extends"               { return symbol(sym.EXTENDS); }
 ","                     { return symbol(sym.COMMA); }
 "."                     { return symbol(sym.DOT); }
@@ -130,7 +133,6 @@ ID = [a-zA-Z][a-zA-Z_0-9]*
 "length"                { return symbol(sym.LENGTH); }
 "&&"                    { return symbol(sym.AND); }
 "<"                     { return symbol(sym.LESSTHAN); }
-{WhiteSpace}            { }
 <<EOF>>				    { return symbol(sym.EOF); }
 }
 
@@ -140,5 +142,7 @@ ID = [a-zA-Z][a-zA-Z_0-9]*
 
 <COMMENTS> [^\n]        { }
 <COMMENTS> [\n]         { yybegin(YYINITIAL); }
-<MULTICOMMENTS> [^"*/"] { }
-<MULTICOMMENTS> "*/"    { yybegin(YYINITIAL); }
+<MULTICOMMENTS> [^*] { }
+<MULTICOMMENTS> [*] { yybegin(MULTICOMMENTSSECOUND);}
+<MULTICOMMENTSSECOUND> [^/] { yybegin(MULTICOMMENTS);}
+<MULTICOMMENTSSECOUND> "/" { yybegin(YYINITIAL);}

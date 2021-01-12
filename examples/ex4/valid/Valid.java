@@ -15,8 +15,7 @@ class Main {
         public int fun() {
             int x;
             x = 1;
-            ~
-            /* x = 0; */
+            /* x = 0; ** */
         	return x;
     	}
 }
