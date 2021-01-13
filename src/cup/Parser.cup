@@ -29,7 +29,7 @@ parser code
         switch (this.lexer.yystate()) {
             case Lexer.MULTICOMMENTS:
             case Lexer.MULTICOMMENTSSECOUND:
-                System.err.print("Syntax error at line " + (lexer.multiCommentStartLine+1) + " of input. Lexer\n");
+                System.err.print("Syntax error at line " + (lexer.multiCommentStartLine+1) + " of input.\n"); //Lexer
                 break;
             default:
                 System.err.print("Syntax error at line " + lexer.getLine() + " of input.\n"); //parser
