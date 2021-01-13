@@ -139,9 +139,11 @@ ID = [a-zA-Z][a-zA-Z_0-9]*
 <YYINITIAL> {
 {ID}                    { return symbol(sym.ID,new String(yytext())); }
 }
-
-<COMMENTS> [^\n]        { }
 <COMMENTS> [\n]         { yybegin(YYINITIAL); }
+<COMMENTS> [\r\n]         { yybegin(YYINITIAL); }
+<COMMENTS> [\r]         { yybegin(YYINITIAL); }
+<COMMENTS> [^\n]        { }
+
 <MULTICOMMENTS> [^*] { }
 <MULTICOMMENTS> [*] { yybegin(MULTICOMMENTSSECOUND);}
 <MULTICOMMENTSSECOUND> [^/] { yybegin(MULTICOMMENTS);}
