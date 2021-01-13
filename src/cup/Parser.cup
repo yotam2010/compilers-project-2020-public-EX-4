@@ -109,6 +109,7 @@ non terminal FormalArg formalArg;
 non terminal LinkedList<Expr> commaexprlist;
 non terminal LinkedList<Expr> commaexprmakelist;
 non terminal LinkedList<FormalArg> formalArglist;
+non terminal LinkedList<FormalArg> formalArgmakelist;
 non terminal LinkedList<MethodDecl> methodlist;
 non terminal LinkedList<Statement> statementlist;
 non terminal LinkedList<VarDecl> varlist;
@@ -198,7 +199,10 @@ commaexprmakelist ::= /* empty */           	{: RESULT = new LinkedList<Expr>();
 ;
 
 formalArglist ::= COMMA formalArg:a formalArglist:el {: el.addFirst(a); RESULT = el; :}
-		 | /* empty */           	{: RESULT = new LinkedList<FormalArg>(); :}
+		 | COMMA formalArg:a formalArgmakelist:el {: el.addFirst(a); RESULT = el; :}
+;
+
+formalArgmakelist ::= /* empty */           	{: RESULT = new LinkedList<FormalArg>(); :}
 ;
 
 classlist ::=  classlist :clist classDecl: c1 {: clist.add(c1); RESULT = clist; :}
