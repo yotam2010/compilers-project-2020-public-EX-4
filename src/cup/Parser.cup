@@ -118,7 +118,7 @@ non terminal LinkedList<ClassDecl> classlist;
 /***********************/
 
 precedence nonassoc ASSIGN;
-precedence nonassoc AND;
+precedence left AND;
 precedence left LESSTHAN;
 precedence left PLUS, MINUS;
 precedence left MULT;
