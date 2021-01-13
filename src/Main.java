@@ -14,22 +14,18 @@ public class Main {
 
             if (inputMethod.equals("parse")) {
 
-                try{
-                    var inputFilename = filename;
-                    FileReader fileReader = new FileReader(new File(inputFilename));
+                var inputFilename = filename;
+                FileReader fileReader = new FileReader(new File(inputFilename));
 
-                    Parser p = new Parser(new Lexer(fileReader));
-                    Program program = (Program) p.parse().value;
+                Parser p = new Parser(new Lexer(fileReader));
+                Program program = (Program) p.parse().value;
 
-                    AstPrintVisitor astPrinter = new AstPrintVisitor();
-                    program.accept(astPrinter);
-                    AstXMLSerializer xmlSerializer = new AstXMLSerializer();
-                    xmlSerializer.serialize(program, outfilename);
+                AstPrintVisitor astPrinter = new AstPrintVisitor();
+                program.accept(astPrinter);
+                AstXMLSerializer xmlSerializer = new AstXMLSerializer();
+                xmlSerializer.serialize(program, outfilename);
 
-                    return;
-
-                }catch (Exception e){
-                }
+                return;
 
             } else if (inputMethod.equals("unmarshal")) {
                 AstXMLSerializer xmlSerializer = new AstXMLSerializer();

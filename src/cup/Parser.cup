@@ -126,6 +126,7 @@ precedence left PLUS, MINUS;
 precedence left MULT;
 precedence left NOT, NEW;
 precedence left DOT;
+precedence left LPARENSQUARE;
 
 /************************/
 /* INITIAL NON TERMINAL */
