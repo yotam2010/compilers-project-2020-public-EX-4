@@ -150,7 +150,8 @@ varDecl ::= astType:t1 ID:d1 SEMICOLON {: RESULT = new VarDecl(t1,d1,t1left); :}
 ;
 
 methodDecl ::= PUBLIC astType:t1 ID:d1 LPAREN formalArg:a1 formalArglist:alist RPAREN LPARENCURL varlist:vlist statementlist:slist RETURN expr:e1 SEMICOLON RPARENCURL{: alist.addFirst(a1); RESULT = new MethodDecl(t1,d1,alist,vlist,slist,e1,t1left); :}
-            | PUBLIC astType:t1 ID:d1 LPAREN formalArglist:alist RPAREN LPARENCURL varlist:vlist statementlist:slist RETURN expr:e1 SEMICOLON RPARENCURL{: RESULT = new MethodDecl(t1,d1,alist,vlist,slist,e1,t1left); :}
+            | PUBLIC astType:t1 ID:d1 LPAREN formalArg:a1 formalArgmakelist:alist RPAREN LPARENCURL varlist:vlist statementlist:slist RETURN expr:e1 SEMICOLON RPARENCURL{: alist.addFirst(a1); RESULT = new MethodDecl(t1,d1,alist,vlist,slist,e1,t1left); :}
+            | PUBLIC astType:t1 ID:d1 LPAREN formalArgmakelist:alist RPAREN LPARENCURL varlist:vlist statementlist:slist RETURN expr:e1 SEMICOLON RPARENCURL{: RESULT = new MethodDecl(t1,d1,alist,vlist,slist,e1,t1left); :}
 ;
 
 astType ::= INT LPARENSQUARE RPARENSQUARE {: RESULT = new IntArrayAstType(); :}
