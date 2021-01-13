@@ -107,6 +107,7 @@ non terminal Program program;
 non terminal FormalArg formalArg;
 
 non terminal LinkedList<Expr> commaexprlist;
+non terminal LinkedList<Expr> commaexprmakelist;
 non terminal LinkedList<FormalArg> formalArglist;
 non terminal LinkedList<MethodDecl> methodlist;
 non terminal LinkedList<Statement> statementlist;
@@ -178,7 +179,8 @@ expr ::= expr:e1 PLUS expr:e2 		{: RESULT = new AddExpr(e1, e2); :}
          | expr:e1 LPARENSQUARE expr:e2 RPARENSQUARE {: RESULT = new ArrayAccessExpr(e1, e2); :}
          | expr:e1 DOT LENGTH {: RESULT = new ArrayLengthExpr(e1); :}
          | expr:e1 DOT ID:d1 LPAREN expr:e2 commaexprlist:clist RPAREN {: clist.addFirst(e2); RESULT = new MethodCallExpr(e1,d1,clist); :}
-         | expr:e1 DOT ID:d1 LPAREN commaexprlist:clist RPAREN {: RESULT = new MethodCallExpr(e1,d1,clist); :}
+         | expr:e1 DOT ID:d1 LPAREN commaexprmakelist:clist RPAREN {: RESULT = new MethodCallExpr(e1,d1,clist); :}
+         | expr:e1 DOT ID:d1 LPAREN expr:e2 commaexprmakelist:clist RPAREN {: clist.addFirst(e2); RESULT = new MethodCallExpr(e1,d1,clist); :}
          | TRUE {: RESULT = new TrueExpr(); :}
          | FALSE {: RESULT = new FalseExpr(); :}
          | ID:d1 {: RESULT = new IdentifierExpr(d1); :}
@@ -189,7 +191,10 @@ expr ::= expr:e1 PLUS expr:e2 		{: RESULT = new AddExpr(e1, e2); :}
 ;
 
 commaexprlist ::= COMMA expr: e commaexprlist:el {: el.addFirst(e); RESULT = el; :}
-		 | /* empty */           	{: RESULT = new LinkedList<Expr>(); :}
+		 | COMMA expr:e commaexprmakelist:el {: el.addFirst(e); RESULT = el; :}
+;
+
+commaexprmakelist ::= /* empty */           	{: RESULT = new LinkedList<Expr>(); :}
 ;
 
 formalArglist ::= COMMA formalArg:a formalArglist:el {: el.addFirst(a); RESULT = el; :}
